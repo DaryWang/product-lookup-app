@@ -3,7 +3,11 @@ import re
 import csv
 from bs4 import BeautifulSoup
 import streamlit as st
+import pandas as pd
 import io
+
+# GitHub 上存储产品编号和名称对照表的原始 URL
+GITHUB_CSV_URL = "https://raw.githubusercontent.com/your-username/your-repo-name/main/product_mapping.csv"
 
 # 国家网站模板，按要求顺序排列
 URL_TEMPLATES = {
@@ -15,20 +19,13 @@ URL_TEMPLATES = {
 
 # 正则表达式：只提取数字和符号（例如，`,`和`.-`）
 def clean_price(price_text):
-    # 使用正则表达式清除价格文本中的字母和非数字符号
     cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
     return cleaned_price
 
 # 提取价格的函数（处理重定向）
 def extract_prices(url):
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-    
-    # 发送请求，获取最终重定向后的页面
+    headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers, allow_redirects=True)
-    
-    # 解析重定向后的页面内容
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # 提取常规价格
@@ -38,8 +35,6 @@ def extract_prices(url):
         regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else 'N/A'
     else:
         regular_price = 'N/A'
-
-    # 清理常规价格
     regular_price = clean_price(regular_price)
 
     # 提取促销价格
@@ -47,7 +42,6 @@ def extract_prices(url):
     if promo_price_element:
         promo_price = promo_price_element.find('span', {'class': 'inc-vat'})
         if promo_price:
-            # 获取促销价格并清除 "Førpris: " 部分
             promo_price_text = promo_price.get_text(strip=True)
             promo_price_value = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
             promo_price = clean_price(promo_price_value)
@@ -56,61 +50,59 @@ def extract_prices(url):
     else:
         promo_price = 'N/A'
 
-    # 如果促销价格存在，将其视为常规价格，原常规价格作为促销价格
-    if promo_price != 'N/A' and promo_price != 'N/A':
+    if promo_price != 'N/A':
         regular_price, promo_price = promo_price, regular_price
 
     return regular_price, promo_price
 
+# 从 GitHub 读取产品编号和名称对照表
+def load_product_mapping_from_github():
+    response = requests.get(GITHUB_CSV_URL)
+    if response.status_code == 200:
+        # 使用 pandas 读取 CSV 内容
+        df = pd.read_csv(io.StringIO(response.text))
+        if 'Product ID' in df.columns and 'Product Name' in df.columns:
+            return df
+        else:
+            st.error("GitHub CSV file must contain 'Product ID' and 'Product Name' columns.")
+            return None
+    else:
+        st.error("Failed to load the CSV file from GitHub.")
+        return None
+
 # 将查询结果保存为 TXT 文件（CSV 格式）
 def save_results_to_txt(product_id, results):
-    # 使用 io.StringIO 以字符串形式生成文件
     output = io.StringIO()
     writer = csv.writer(output)
-    
-    # 写入标题行
     writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
-    
-    # 写入数据
     for result in results:
         writer.writerow(result)
-    
-    # 获取结果字符串内容并返回
     return output.getvalue()
 
 # 页面设置
 st.set_page_config(page_title="Nordic Customer Product Lookup", layout="centered")
 
 st.title("🌍 Nordic Customer Product Lookup")
-product_id = st.text_input("Enter the product ID (e.g., 897511)", "")
+st.write("You can either input a Product ID or choose from the dropdown list of product names.")
 
+# 从 GitHub 加载对照表
+product_mapping_df = load_product_mapping_from_github()
+
+# 用户输入产品编号
+product_id_input = st.text_input("Enter the product ID (e.g., 897511)", "")
+
+# 用户选择产品名称（如果对照表已加载）
+product_name_input = None
+if product_mapping_df is not None:
+    product_name_input = st.selectbox(
+        "Or select a product name from the list:",
+        product_mapping_df['Product Name'].dropna().unique()  # 去除空值
+    )
+
+# 根据选择的产品名称或产品编号查询价格
 if st.button("Get Prices"):
-    if not product_id.strip():
-        st.warning("Please enter a product ID.")
-    else:
-        st.success("Here are the product prices across the Nordic countries:")
-
-        results = []
-        
-        # 按照瑞典、挪威、芬兰、丹麦的顺序显示
-        for country, url_template in URL_TEMPLATES.items():
-            url = url_template.format(product_id.strip())
-            st.write(f"🔗 [{country} Product Page]({url})")
-            
-            # 提取常规价格和促销价格
-            regular_price, promo_price = extract_prices(url)
-            st.write(f"Regular Price: {regular_price} | Promo Price: {promo_price}")
-            
-            # 将结果保存到列表中
-            results.append([product_id.strip(), country, url, regular_price, promo_price])
-
-        # 将查询结果保存为 TXT 文件（CSV 格式）
-        txt_file = save_results_to_txt(product_id.strip(), results)
-
-        # 提供下载按钮
-        st.download_button(
-            label="Download Results as TXT",
-            data=txt_file,
-            file_name=f"product_{product_id.strip()}_prices.txt",
-            mime="text/plain"
-        )
+    if product_id_input.strip():
+        selected_product_id = product_id_input.strip()
+    elif product_name_input:
+        selected_product_id = product_mapping_df.loc[
+            product_mapping_df['Product Name'] == product_name_input, 'Product ID
