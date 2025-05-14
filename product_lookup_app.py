@@ -121,8 +121,8 @@ if st.button("Get Prices"):
         
         # 显示查询结果
         for result in results:
-            st.write(f"**{result[1]}** | URL: {result[2]}")  # 显示国家
-            st.write(f"**Regular Price**: {result[3]} | **Promo Price**: {result[4]}")
+            st.write(f"**{result[1]}** | **Regular Price**: {result[3]} | **Promo Price**: {result[4]}")  # 显示国家
+            st.write(f"URL: {result[2]}")
         
         # 下载查询结果
         txt_data = save_results_to_txt(selected_product_id, results)
