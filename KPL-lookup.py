@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import pandas as pd
 import io
+import random
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
 GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/KPL.csv"
@@ -29,7 +30,6 @@ def get_random_user_agent():
         raise ValueError("User-Agent list is empty!")
     
     return random.choice(user_agents)
-
 
 # 正则表达式：只提取数字和符号（例如，`,`和`.-`）
 def clean_price(price_text):
