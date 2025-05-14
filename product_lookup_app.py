@@ -3,12 +3,12 @@ import re
 from bs4 import BeautifulSoup
 import streamlit as st
 
-# 国家网站模板
+# 国家网站模板，按要求顺序排列
 URL_TEMPLATES = {
-    "芬兰 🇫🇮": "https://www.gigantti.fi/product/{}",
-    "挪威 🇳🇴": "https://www.elkjop.no/product/{}",
-    "瑞典 🇸🇪": "https://www.elgiganten.se/product/{}",
-    "丹麦 🇩🇰": "https://www.elgiganten.dk/product/{}",
+    "Sweden 🇸🇪": "https://www.elgiganten.se/product/{}",
+    "Norway 🇳🇴": "https://www.elkjop.no/product/{}",
+    "Finland 🇫🇮": "https://www.gigantti.fi/product/{}",
+    "Denmark 🇩🇰": "https://www.elgiganten.dk/product/{}",
 }
 
 # 正则表达式：只提取数字和符号（例如，`,`和`.-`）
@@ -33,9 +33,9 @@ def extract_prices(url):
     price_element = soup.find('div', {'class': 'grid grid-cols-subgrid grid-rows-subgrid row-span-2 gap-1 items-end'})
     if price_element:
         inc_vat_price = price_element.find('span', {'class': 'inc-vat'})
-        regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else '未找到常规价格'
+        regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else 'N/A'
     else:
-        regular_price = '未找到常规价格'
+        regular_price = 'N/A'
 
     # 清理常规价格
     regular_price = clean_price(regular_price)
@@ -50,32 +50,33 @@ def extract_prices(url):
             promo_price_value = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
             promo_price = clean_price(promo_price_value)
         else:
-            promo_price = '未找到促销价格'
+            promo_price = 'N/A'
     else:
-        promo_price = '未找到促销价格'
+        promo_price = 'N/A'
 
     # 如果促销价格存在，将其视为常规价格，原常规价格作为促销价格
-    if promo_price != '未找到促销价格' and promo_price != '未找到常规价格':
+    if promo_price != 'N/A' and promo_price != 'N/A':
         regular_price, promo_price = promo_price, regular_price
 
     return regular_price, promo_price
 
 # 页面设置
-st.set_page_config(page_title="北欧客户产品查询", layout="centered")
+st.set_page_config(page_title="Nordic Customer Product Lookup", layout="centered")
 
-st.title("🌍 北欧客户产品页面查询")
-product_id = st.text_input("请输入产品编号（如 897511）", "")
+st.title("🌍 Nordic Customer Product Lookup")
+product_id = st.text_input("Enter the product ID (e.g., 897511)", "")
 
-if st.button("查询价格"):
+if st.button("Get Prices"):
     if not product_id.strip():
-        st.warning("请输入产品编号")
+        st.warning("Please enter a product ID.")
     else:
-        st.success("以下是该产品在各国网站的价格信息：")
-        
+        st.success("Here are the product prices across the Nordic countries:")
+
+        # 按照瑞典、挪威、芬兰、丹麦的顺序显示
         for country, url_template in URL_TEMPLATES.items():
             url = url_template.format(product_id.strip())
-            st.write(f"🔗 [{country} 产品页面]({url})")
+            st.write(f"🔗 [{country} Product Page]({url})")
             
             # 提取常规价格和促销价格
             regular_price, promo_price = extract_prices(url)
-            st.write(f"常规价格: {regular_price} | 促销价格: {promo_price}")
+            st.write(f"Regular Price: {regular_price} | Promo Price: {promo_price}")
