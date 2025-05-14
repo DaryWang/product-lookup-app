@@ -27,28 +27,23 @@ def extract_prices(url):
     response = requests.get(url, headers=headers, allow_redirects=True)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # 提取常规价格
-    price_element = soup.find('span', {'class': 'product-price-now'})
+    # 提取常规价格（当前价格）
+    price_element = soup.find('div', class_='product-price__current-price')
     if price_element:
-        inc_vat_price = price_element.find('span', {'class': 'inc-vat'})
-        regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else 'N/A'
+        regular_price = price_element.get_text(strip=True)
     else:
         regular_price = 'N/A'
     regular_price = clean_price(regular_price)
 
-    # 提取促销价格
-    promo_price_element = soup.find('span', {'class': 'product-price-before '})
+    # 提取促销前价格（原价）
+    promo_price_element = soup.find('div', class_='product-price__old-price')
     if promo_price_element:
-        promo_price = promo_price_element.find('span', {'class': 'inc-vat'})
-        if promo_price:
-            promo_price_text = promo_price.get_text(strip=True)
-            promo_price_value = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
-            promo_price = clean_price(promo_price_value)
-        else:
-            promo_price = 'N/A'
+        promo_price_text = promo_price_element.get_text(strip=True)
+        promo_price = clean_price(promo_price_text)
     else:
         promo_price = 'N/A'
 
+    # 如果存在促销，则交换顺序（现价在 regular_price）
     if promo_price != 'N/A':
         regular_price, promo_price = promo_price, regular_price
 
