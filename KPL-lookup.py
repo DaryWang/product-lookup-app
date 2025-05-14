@@ -17,11 +17,17 @@ URL_TEMPLATES = {
 }
 
 def get_random_user_agent():
+    # 定义多个常见的 User-Agent
     user_agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X)...",
-        "Mozilla/5.0 (X11; Linux x86_64)..."
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_4_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     ]
+    
+    # 检查是否有有效的 User-Agent
+    if not user_agents:
+        raise ValueError("User-Agent list is empty!")
+    
     return random.choice(user_agents)
 
 
