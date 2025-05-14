@@ -10,8 +10,8 @@ URL_TEMPLATES = {
     "丹麦 🇩🇰": "https://www.elgiganten.dk/product/{}",
 }
 
-# 提取价格和库存的函数（处理重定向）
-def extract_price_stock(url):
+# 提取价格的函数（处理重定向）
+def extract_price(url):
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
@@ -19,25 +19,26 @@ def extract_price_stock(url):
     # 发送请求，获取最终重定向后的页面
     response = requests.get(url, headers=headers, allow_redirects=True)
     
-    # 获取最终跳转后的 URL
-    final_url = response.url
-
     # 解析重定向后的页面内容
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    # 提取价格
+    # 提取常规价格
     price_element = soup.find('div', {'class': 'grid grid-cols-subgrid grid-rows-subgrid row-span-2 gap-1 items-end'})
     if price_element:
         inc_vat_price = price_element.find('span', {'class': 'inc-vat'})
-        price = inc_vat_price.get_text(strip=True) if inc_vat_price else '未找到价格'
+        regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else '未找到常规价格'
     else:
-        price = '未找到价格'
+        regular_price = '未找到常规价格'
 
-    # 提取库存信息
-    stock_element = soup.find('div', {'class': 'availability-msg'})
-    stock = stock_element.get_text(strip=True) if stock_element else '未找到库存信息'
+    # 提取促销价格
+    promo_price_element = soup.find('span', {'class': 'font-regular flex flex-shrink px-1 items-center text-base'})
+    if promo_price_element:
+        promo_price = promo_price_element.find('span', {'class': 'inc-vat'})
+        promo_price = promo_price.get_text(strip=True) if promo_price else '未找到促销价格'
+    else:
+        promo_price = '未找到促销价格'
 
-    return price, stock, final_url
+    return regular_price, promo_price
 
 # 页面设置
 st.set_page_config(page_title="北欧客户产品查询", layout="centered")
@@ -45,16 +46,16 @@ st.set_page_config(page_title="北欧客户产品查询", layout="centered")
 st.title("🌍 北欧客户产品页面查询")
 product_id = st.text_input("请输入产品编号（如 897511）", "")
 
-if st.button("查询价格和库存"):
+if st.button("查询价格"):
     if not product_id.strip():
         st.warning("请输入产品编号")
     else:
-        st.success("以下是该产品在各国网站的链接和相关信息：")
+        st.success("以下是该产品在各国网站的价格信息：")
         
         for country, url_template in URL_TEMPLATES.items():
             url = url_template.format(product_id.strip())
             st.write(f"🔗 [{country} 产品页面]({url})")
             
-            # 提取价格、库存和最终 URL
-            price, stock, final_url = extract_price_stock(url)
-            st.write(f"价格: {price} | 库存: {stock} | 最终页面: {final_url}")
+            # 提取常规价格和促销价格
+            regular_price, promo_price = extract_price(url)
+            st.write(f"常规价格: {regular_price} | 促销价格: {promo_price}")
