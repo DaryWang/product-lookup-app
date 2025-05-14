@@ -1,7 +1,9 @@
 import requests
 import re
+import csv
 from bs4 import BeautifulSoup
 import streamlit as st
+import io
 
 # 国家网站模板，按要求顺序排列
 URL_TEMPLATES = {
@@ -60,6 +62,18 @@ def extract_prices(url):
 
     return regular_price, promo_price
 
+# 将查询结果保存为 CSV 文件
+def save_results_to_csv(product_id, results):
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
+    
+    for result in results:
+        writer.writerow(result)
+    
+    output.seek(0)
+    return output
+
 # 页面设置
 st.set_page_config(page_title="Nordic Customer Product Lookup", layout="centered")
 
@@ -72,6 +86,8 @@ if st.button("Get Prices"):
     else:
         st.success("Here are the product prices across the Nordic countries:")
 
+        results = []
+        
         # 按照瑞典、挪威、芬兰、丹麦的顺序显示
         for country, url_template in URL_TEMPLATES.items():
             url = url_template.format(product_id.strip())
@@ -80,3 +96,17 @@ if st.button("Get Prices"):
             # 提取常规价格和促销价格
             regular_price, promo_price = extract_prices(url)
             st.write(f"Regular Price: {regular_price} | Promo Price: {promo_price}")
+            
+            # 将结果保存到列表中
+            results.append([product_id.strip(), country, url, regular_price, promo_price])
+
+        # 将查询结果保存为 CSV 文件
+        csv_file = save_results_to_csv(product_id.strip(), results)
+
+        # 提供下载按钮
+        st.download_button(
+            label="Download Results as CSV",
+            data=csv_file,
+            file_name=f"product_{product_id.strip()}_prices.csv",
+            mime="text/csv"
+        )
