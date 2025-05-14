@@ -5,15 +5,6 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import pandas as pd
 import io
-import time
-import random
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-
-
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
 GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/KPL.csv"
@@ -25,51 +16,63 @@ URL_TEMPLATES = {
     "Denmark": "https://www.komplett.dk/product/{}",
 }
 
+def get_random_user_agent():
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)...",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X)...",
+        "Mozilla/5.0 (X11; Linux x86_64)..."
+    ]
+    return random.choice(user_agents)
 
-def get_headless_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("window-size=1920,1080")
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
+# 正则表达式：只提取数字和符号（例如，`,`和`.-`）
+def clean_price(price_text):
+    cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
+    return cleaned_price
+
+#价格提取
 def extract_prices(url):
-    driver = get_headless_driver()
+    headers = {
+        "User-Agent": get_random_user_agent(),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.google.com/"
+    }
 
     try:
-        driver.get(url)
-        time.sleep(3)  # 等待页面加载
-
-        # 提取当前价格
-        try:
-            price_element = driver.find_element(By.CSS_SELECTOR, "span.product-price-now")
-            regular_price = price_element.text.strip()
-        except:
-            regular_price = 'N/A'
-
-        # 提取促销价格（原价）
-        try:
-            promo_element = driver.find_element(By.CSS_SELECTOR, "span.product-price-before")
-            promo_price_text = promo_element.text.strip()
-            promo_price = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
-        except:
-            promo_price = 'N/A'
-
-        # 如果存在促销价格，交换
-        if promo_price != 'N/A':
-            regular_price, promo_price = promo_price, regular_price
-
-        return regular_price, promo_price
-
+        response = requests.get(url, headers=headers, timeout=20)
+        response.raise_for_status()
     except Exception as e:
-        return 'ERROR', f'抓取失败: {str(e)}'
+        return 'ERROR', f"Request failed: {e}"
 
-    finally:
-        driver.quit()
+    soup = BeautifulSoup(response.text, 'html.parser')
 
+    # 提取常规价格（当前价格）
+    price_element = soup.find('span', {'class': 'product-price-now'})
+    if price_element:
+        inc_vat_price = price_element  # 模拟你原来的结构
+        regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else 'N/A'
+    else:
+        regular_price = 'N/A'
+    regular_price = clean_price(regular_price)
 
+    # 提取促销价格（原价）
+    promo_price_element = soup.find('span', {'class': 'product-price-before '})
+    if promo_price_element:
+        promo_price = promo_price_element  # 模拟你原来的结构
+        if promo_price:
+            promo_price_text = promo_price.get_text(strip=True)
+            promo_price_value = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
+            promo_price = clean_price(promo_price_value)
+        else:
+            promo_price = 'N/A'
+    else:
+        promo_price = 'N/A'
+
+    # 如果有促销，交换价格变量
+    if promo_price != 'N/A':
+        regular_price, promo_price = promo_price, regular_price
+
+    return regular_price, promo_price
 # 从 GitHub 读取产品编号和名称对照表
 def load_product_mapping_from_github():
     response = requests.get(GITHUB_CSV_URL)
