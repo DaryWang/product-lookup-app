@@ -7,7 +7,7 @@ import pandas as pd
 import io
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
-GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/product_mapping.csv"
+GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/main/product-lookup-app/product_mapping.csv"
 
 # 国家网站模板，按要求顺序排列
 URL_TEMPLATES = {
@@ -104,6 +104,29 @@ if st.button("Get Prices"):
     if product_id_input.strip():
         selected_product_id = product_id_input.strip()
     elif product_name_input:
-       selected_product_id = product_mapping_df.loc[
-    product_mapping_df['Product Name'] == product_name_input, 'Product ID'
-].values
+        selected_product_id = product_mapping_df.loc[
+            product_mapping_df['Product Name'] == product_name_input, 'Product ID'
+        ].values
+        selected_product_id = selected_product_id[0] if selected_product_id else None
+    else:
+        st.error("Please enter a product ID or select a product name.")
+        selected_product_id = None
+
+    if selected_product_id:
+        results = []
+        for country, url_template in URL_TEMPLATES.items():
+            product_url = url_template.format(selected_product_id)
+            regular_price, promo_price = extract_prices(product_url)
+            results.append([selected_product_id, country, product_url, regular_price, promo_price])
+        
+        # 显示查询结果
+        for result in results:
+            st.write(f"**Product ID**: {result[0]}")
+            st.write(f"**Country**: {result[1]}")
+            st.write(f"**Product URL**: {result[2]}")
+            st.write(f"**Regular Price**: {result[3]}")
+            st.write(f"**Promo Price**: {result[4]}")
+        
+        # 下载查询结果
+        txt_data = save_results_to_txt(selected_product_id, results)
+        st.download_button("Download Results", txt_data, file_name="product_prices.txt")
