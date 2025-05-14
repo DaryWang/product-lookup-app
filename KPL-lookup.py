@@ -23,14 +23,19 @@ def clean_price(price_text):
 
 #价格提取
 def extract_prices(url):
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"}
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Connection": "keep-alive"
+    }
+    
     try:
-        response = requests.get(url, headers=headers, allow_redirects=True, timeout=30)
-    except Exception as e:
-        return 'ERROR', f'请求失败: {e}'
-
-    if response.status_code != 200:
-        return 'ERROR', f'请求失败，状态码: {response.status_code}'
+        response = requests.get(url, headers=headers, allow_redirects=True, timeout=30)  # 增加超时时间
+        response.raise_for_status()  # 检查请求是否成功
+    except requests.exceptions.RequestException as e:
+        return 'ERROR', f'请求失败: {str(e)}'
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
