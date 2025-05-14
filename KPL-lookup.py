@@ -45,7 +45,7 @@ def extract_prices(url):
     }
 
     try:
-        response = requests.get(url, headers=headers, timeout=20)
+        response = requests.get(url, headers=headers, timeout=2)
         response.raise_for_status()
     except Exception as e:
         return 'ERROR', f"Request failed: {e}"
