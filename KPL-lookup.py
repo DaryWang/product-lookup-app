@@ -21,33 +21,46 @@ def clean_price(price_text):
     cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
     return cleaned_price
 
+#价格提取
 def extract_prices(url):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers, allow_redirects=True)
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"}
+    try:
+        response = requests.get(url, headers=headers, allow_redirects=True, timeout=10)
+    except Exception as e:
+        return 'ERROR', f'请求失败: {e}'
+
+    if response.status_code != 200:
+        return 'ERROR', f'请求失败，状态码: {response.status_code}'
+
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # 提取常规价格（当前价格）
     price_element = soup.find('span', {'class': 'product-price-now'})
     if price_element:
-        regular_price = price_element.get_text(strip=True)
+        inc_vat_price = price_element  # 模拟你原来的结构
+        regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else 'N/A'
     else:
         regular_price = 'N/A'
     regular_price = clean_price(regular_price)
 
-    # 提取促销前价格（原价）
+    # 提取促销价格（原价）
     promo_price_element = soup.find('span', {'class': 'product-price-before '})
     if promo_price_element:
-        promo_price_text = promo_price_element.get_text(strip=True)
-        promo_price = clean_price(promo_price_text)
+        promo_price = promo_price_element  # 模拟你原来的结构
+        if promo_price:
+            promo_price_text = promo_price.get_text(strip=True)
+            promo_price_value = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
+            promo_price = clean_price(promo_price_value)
+        else:
+            promo_price = 'N/A'
     else:
         promo_price = 'N/A'
 
-    # 如果有促销，就交换 regular 和 promo，使当前价在 regular_price
+    # 如果有促销，交换价格变量
     if promo_price != 'N/A':
         regular_price, promo_price = promo_price, regular_price
 
     return regular_price, promo_price
-
 # 从 GitHub 读取产品编号和名称对照表
 def load_product_mapping_from_github():
     response = requests.get(GITHUB_CSV_URL)
