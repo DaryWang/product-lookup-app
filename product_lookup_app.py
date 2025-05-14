@@ -71,7 +71,10 @@ def save_results_to_csv(product_id, results):
         
         for result in results:
             writer.writerow(result)
-    
+        
+        # 确保所有数据写入了流
+        wrapped_output.flush()
+
     output.seek(0)
     return output
 
