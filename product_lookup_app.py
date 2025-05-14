@@ -80,9 +80,9 @@ def save_results_to_txt(product_id, results):
     return output.getvalue()
 
 # 页面设置
-st.set_page_config(page_title="Nordic Customer Product Lookup", layout="centered")
+st.set_page_config(page_title="Elkjop Price Lookup", layout="centered")
 
-st.title("🌍 Nordic Customer Product Lookup")
+st.title("💻 Elkjop Price Lookup")
 st.write("You can either input a Product ID or choose from the dropdown list of product names.")
 
 # 从 GitHub 加载对照表
@@ -124,7 +124,6 @@ if st.button("Get Prices"):
             st.write(f"### {result[1]}")  # 显示国家
             st.write(f"**Product URL**: {result[2]}")
             st.write(f"**Regular Price**: {result[3]} | **Promo Price**: {result[4]}")
-            st.write(f"**Promo Price**: {result[4]}")
         
         # 下载查询结果
         txt_data = save_results_to_txt(selected_product_id, results)
