@@ -1,4 +1,4 @@
-# GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/product_mapping%201.csv"
+# GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/TP-Link.csv"
 
 import requests
 import re
@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
-GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/product_mapping%201.csv"
+GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/TP-Link.csv"
 
 # 国家网站模板
 URL_TEMPLATES = {
