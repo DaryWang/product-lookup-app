@@ -7,7 +7,7 @@ import pandas as pd
 import io
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
-GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/product_mapping.csv"
+GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/KPL.csv"
 
 # 国家网站模板，按要求顺序排列
 URL_TEMPLATES = {
@@ -125,4 +125,4 @@ if st.button("Get Prices"):
         
         # 下载查询结果
         txt_data = save_results_to_txt(selected_product_id, results)
-        st.download_button("Download Results", txt_data, file_name="product_prices.txt")
+        st.download_button("Download Results", txt_data, file_name="KPL_prices.txt")
