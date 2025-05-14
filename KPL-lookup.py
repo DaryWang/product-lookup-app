@@ -25,7 +25,7 @@ def clean_price(price_text):
 def extract_prices(url):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"}
     try:
-        response = requests.get(url, headers=headers, allow_redirects=True, timeout=10)
+        response = requests.get(url, headers=headers, allow_redirects=True, timeout=30)
     except Exception as e:
         return 'ERROR', f'请求失败: {e}'
 
