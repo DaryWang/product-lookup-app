@@ -94,12 +94,11 @@ product_id_input = st.text_input("Enter the product ID (e.g., 897511)", "")
 # 用户选择产品名称（如果对照表已加载）
 product_name_input = None
 if product_mapping_df is not None:
-    product_names = [""] + list(product_mapping_df['Product Name'].dropna().unique())
-product_name_input = st.selectbox(
+    product_name_input = st.selectbox(
     "Or select a product name from the list:",
-    product_names,
-    index=0  # 默认选中空白项
+    product_mapping_df['Product Name'].dropna().unique()
 )
+
 
 # 根据选择的产品名称或产品编号查询价格
 if st.button("Get Prices"):
