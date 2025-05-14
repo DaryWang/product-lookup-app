@@ -11,10 +11,10 @@ GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/
 
 # 国家网站模板，按要求顺序排列
 URL_TEMPLATES = {
-    "Sweden 🇸🇪": "https://www.elgiganten.se/product/{}",
-    "Norway 🇳🇴": "https://www.elkjop.no/product/{}",
-    "Finland 🇫🇮": "https://www.gigantti.fi/product/{}",
-    "Denmark 🇩🇰": "https://www.elgiganten.dk/product/{}",
+    "Sweden": "https://www.elgiganten.se/product/{}",
+    "Norway": "https://www.elkjop.no/product/{}",
+    "Finland": "https://www.gigantti.fi/product/{}",
+    "Denmark": "https://www.elgiganten.dk/product/{}",
 }
 
 # 正则表达式：只提取数字和符号（例如，`,`和`.-`）
@@ -122,7 +122,6 @@ if st.button("Get Prices"):
         # 显示查询结果
         for result in results:
             st.write(f"### {result[1]}")  # 显示国家
-            st.write(f"**Product ID**: {result[0]}")
             st.write(f"**Product URL**: {result[2]}")
             st.write(f"**Regular Price**: {result[3]}")
             st.write(f"**Promo Price**: {result[4]}")
