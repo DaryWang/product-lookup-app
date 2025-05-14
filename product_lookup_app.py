@@ -121,8 +121,8 @@ if st.button("Get Prices"):
         
         # 显示查询结果
         for result in results:
+            st.write(f"### {result[1]}")  # 显示国家
             st.write(f"**Product ID**: {result[0]}")
-            st.write(f"**Country**: {result[1]}")
             st.write(f"**Product URL**: {result[2]}")
             st.write(f"**Regular Price**: {result[3]}")
             st.write(f"**Promo Price**: {result[4]}")
