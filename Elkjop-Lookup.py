@@ -94,24 +94,28 @@ product_id_input = st.text_input("Enter the product ID (e.g., 897511)", "")
 # 用户选择产品名称（如果对照表已加载）
 product_name_input = None
 if product_mapping_df is not None:
-    product_name_input = st.selectbox(
+    product_names = [""] + list(product_mapping_df['Product Name'].dropna().unique())
+product_name_input = st.selectbox(
     "Or select a product name from the list:",
-    product_mapping_df['Product Name'].dropna().unique()
+    product_names,
+    index=0  # 默认选中空白项
 )
 
 
 # 根据选择的产品名称或产品编号查询价格
 if st.button("Get Prices"):
+    selected_product_id = None
+
     if product_id_input.strip():
         selected_product_id = product_id_input.strip()
-    elif product_name_input:
+        product_name_input = ""  # 清空产品名（符合你要求）
+    elif product_name_input and product_name_input != "":
         selected_product_id = product_mapping_df.loc[
             product_mapping_df['Product Name'] == product_name_input, 'Product ID'
         ].values
-        selected_product_id = selected_product_id[0] if selected_product_id else None
+        selected_product_id = selected_product_id[0] if len(selected_product_id) > 0 else None
     else:
         st.error("Please enter a product ID or select a product name.")
-        selected_product_id = None
 
     if selected_product_id:
         results = []
