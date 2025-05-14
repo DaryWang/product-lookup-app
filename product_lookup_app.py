@@ -123,7 +123,7 @@ if st.button("Get Prices"):
         for result in results:
             st.write(f"### {result[1]}")  # 显示国家
             st.write(f"**Product URL**: {result[2]}")
-            st.write(f"**Regular Price**: {result[3]}")
+            st.write(f"**Regular Price**: {result[3]} | **Promo Price**: {result[4]}")
             st.write(f"**Promo Price**: {result[4]}")
         
         # 下载查询结果
