@@ -10,12 +10,19 @@ URL_TEMPLATES = {
     "丹麦 🇩🇰": "https://www.elgiganten.dk/product/{}",
 }
 
-# 提取价格和库存的函数
+# 提取价格和库存的函数（处理重定向）
 def extract_price_stock(url):
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
-    response = requests.get(url, headers=headers)
+    
+    # 发送请求，获取最终重定向后的页面
+    response = requests.get(url, headers=headers, allow_redirects=True)
+    
+    # 获取最终跳转后的 URL
+    final_url = response.url
+
+    # 解析重定向后的页面内容
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # 提取价格
@@ -26,7 +33,7 @@ def extract_price_stock(url):
     stock_element = soup.find('div', {'class': 'availability-msg'})
     stock = stock_element.get_text(strip=True) if stock_element else '未找到库存信息'
 
-    return price, stock
+    return price, stock, final_url
 
 # 页面设置
 st.set_page_config(page_title="北欧客户产品查询", layout="centered")
@@ -44,6 +51,6 @@ if st.button("查询价格和库存"):
             url = url_template.format(product_id.strip())
             st.write(f"🔗 [{country} 产品页面]({url})")
             
-            # 提取价格和库存
-            price, stock = extract_price_stock(url)
-            st.write(f"价格: {price} | 库存: {stock}")
+            # 提取价格、库存和最终 URL
+            price, stock, final_url = extract_price_stock(url)
+            st.write(f"价格: {price} | 库存: {stock} | 最终页面: {final_url}")
