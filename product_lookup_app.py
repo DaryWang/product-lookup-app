@@ -7,7 +7,7 @@ import pandas as pd
 import io
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
-GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/main/product-lookup-app/product_mapping.csv"
+GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/product_mapping.csv"
 
 # 国家网站模板，按要求顺序排列
 URL_TEMPLATES = {
