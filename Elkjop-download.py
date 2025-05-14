@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
-GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/TP-Link.csv"
+GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/Elkjop.csv"
 
 # 获取当天日期
 date_today = datetime.now().strftime("%Y-%m-%d")  # 格式：2025-05-14
