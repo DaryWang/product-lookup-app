@@ -83,7 +83,7 @@ def save_results_to_txt(product_id, results):
 st.set_page_config(page_title="Elkjop Price Lookup", layout="centered")
 
 st.title("💻 Elkjop Price Lookup")
-st.write("You can either input any Product ID or choose from the dropdown list of TP-Link Models.")
+st.write("You can either input any Product ID or choose a tp-link model from the dropdown list.")
 
 # 从 GitHub 加载对照表
 product_mapping_df = load_product_mapping_from_github()
