@@ -8,6 +8,7 @@ import streamlit as st
 import pandas as pd
 import io
 import time
+from datetime import datetime
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
 GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/product_mapping%201.csv"
@@ -123,15 +124,14 @@ if product_mapping_df is not None:
         # 保存并提供下载
         txt_data = save_results_to_txt(all_results)
         st.success("✅ Fetching complete!")
-       from datetime import datetime
+        
 
-# 获取当前时间并格式化为文件名
-timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-file_name = f"product_prices_{timestamp}.txt"
-
-st.download_button(
-    label="⬇️ Download Results as TXT",
-    data=txt_data,
-    file_name=file_name,
-    mime="text/csv"
-)
+        # 获取当前时间并格式化为文件名
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        file_name = f"product_prices_{timestamp}.txt"
+        st.download_button(
+            label="⬇️ Download Results as TXT",
+            data=txt_data,
+            file_name=file_name,
+            mime="text/csv"
+        )
