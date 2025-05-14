@@ -13,6 +13,9 @@ from datetime import datetime
 # GitHub 上存储产品编号和名称对照表的原始 URL
 GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/TP-Link.csv"
 
+# 获取当天日期
+date_today = datetime.now().strftime("%Y-%m-%d")  # 格式：2025-05-14
+
 # 国家网站模板
 URL_TEMPLATES = {
     "Sweden": "https://www.elgiganten.se/product/{}",
@@ -77,9 +80,9 @@ def load_product_mapping_from_github():
 def save_results_to_txt(results):
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Product ID", "Product Name", "Country", "Product URL", "Regular Price", "Promo Price"])
+    writer.writerow(["Product ID", "Product Name", "Country", "Product URL", "Regular Price", "Promo Price", "Date"])
     for result in results:
-        writer.writerow(result)
+        writer.writerow(result + [date_today])
     return output.getvalue()
 
 # Streamlit 页面设置
@@ -124,14 +127,9 @@ if product_mapping_df is not None:
         # 保存并提供下载
         txt_data = save_results_to_txt(all_results)
         st.success("✅ Fetching complete!")
-        
-
-        # 获取当前时间并格式化为文件名
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        file_name = f"product_prices_{timestamp}.txt"
         st.download_button(
             label="⬇️ Download Results as TXT",
             data=txt_data,
-            file_name=file_name,
+            file_name=f"product_prices_{date_today}.txt",  # 可以保留原来的文件名
             mime="text/csv"
         )
