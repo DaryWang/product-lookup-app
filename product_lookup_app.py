@@ -62,21 +62,21 @@ def extract_prices(url):
 
     return regular_price, promo_price
 
-# 将查询结果保存为 CSV 文件
-def save_results_to_csv(product_id, results):
-    output = io.BytesIO()  # 使用 BytesIO 替代 StringIO
-    with io.TextIOWrapper(output, encoding='utf-8', newline='') as wrapped_output:
-        writer = csv.writer(wrapped_output)  # 使用 TextIOWrapper 处理文本模式
-        writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
-        
-        for result in results:
-            writer.writerow(result)
-        
-        # 确保所有数据写入了流
-        wrapped_output.flush()
-
-    output.seek(0)
-    return output
+# 将查询结果保存为 TXT 文件（CSV 格式）
+def save_results_to_txt(product_id, results):
+    # 使用 io.StringIO 以字符串形式生成文件
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # 写入标题行
+    writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
+    
+    # 写入数据
+    for result in results:
+        writer.writerow(result)
+    
+    # 获取结果字符串内容并返回
+    return output.getvalue()
 
 # 页面设置
 st.set_page_config(page_title="Nordic Customer Product Lookup", layout="centered")
@@ -104,13 +104,13 @@ if st.button("Get Prices"):
             # 将结果保存到列表中
             results.append([product_id.strip(), country, url, regular_price, promo_price])
 
-        # 将查询结果保存为 CSV 文件
-        csv_file = save_results_to_csv(product_id.strip(), results)
+        # 将查询结果保存为 TXT 文件（CSV 格式）
+        txt_file = save_results_to_txt(product_id.strip(), results)
 
         # 提供下载按钮
         st.download_button(
-            label="Download Results as CSV",
-            data=csv_file,
-            file_name=f"product_{product_id.strip()}_prices.csv",
-            mime="text/csv"
+            label="Download Results as TXT",
+            data=txt_file,
+            file_name=f"product_{product_id.strip()}_prices.txt",
+            mime="text/plain"
         )
