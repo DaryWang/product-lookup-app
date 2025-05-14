@@ -21,14 +21,13 @@ def clean_price(price_text):
     cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
     return cleaned_price
 
-# 提取价格的函数（处理重定向）
 def extract_prices(url):
     headers = {"User-Agent": "Mozilla/5.0"}
     response = requests.get(url, headers=headers, allow_redirects=True)
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # 提取常规价格（当前价格）
-    price_element = soup.find('div', class_='product-price__current-price')
+    price_element = soup.find('span', {'class': 'product-price-now'})
     if price_element:
         regular_price = price_element.get_text(strip=True)
     else:
@@ -36,14 +35,14 @@ def extract_prices(url):
     regular_price = clean_price(regular_price)
 
     # 提取促销前价格（原价）
-    promo_price_element = soup.find('div', class_='product-price__old-price')
+    promo_price_element = soup.find('span', {'class': 'product-price-before '})
     if promo_price_element:
         promo_price_text = promo_price_element.get_text(strip=True)
         promo_price = clean_price(promo_price_text)
     else:
         promo_price = 'N/A'
 
-    # 如果存在促销，则交换顺序（现价在 regular_price）
+    # 如果有促销，就交换 regular 和 promo，使当前价在 regular_price
     if promo_price != 'N/A':
         regular_price, promo_price = promo_price, regular_price
 
