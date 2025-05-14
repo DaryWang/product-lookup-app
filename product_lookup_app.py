@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import io
 
 # GitHub原始CSV文件的链接
-GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/main/product-lookup-app/product_mapping.csv"
+GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/product_mapping.csv"
 
 # 从GitHub加载CSV文件
 def load_product_mapping_from_github():
