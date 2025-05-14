@@ -74,7 +74,7 @@ def load_product_mapping_from_github():
 def save_results_to_txt(results):
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
+    writer.writerow(["Product ID", "Product Name", "Country", "Product URL", "Regular Price", "Promo Price"])
     for result in results:
         writer.writerow(result)
     return output.getvalue()
@@ -100,7 +100,7 @@ if product_mapping_df is not None:
         for country, url_template in URL_TEMPLATES.items():
             product_url = url_template.format(product_id)
             regular_price, promo_price = extract_prices(product_url)
-            results.append([product_id, country, product_url, regular_price, promo_price])
+            results.append([product_id, product_name, country, product_url, regular_price, promo_price])
 
         all_results.extend(results)
     
