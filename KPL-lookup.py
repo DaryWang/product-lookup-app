@@ -5,6 +5,10 @@ from bs4 import BeautifulSoup
 import streamlit as st
 import pandas as pd
 import io
+import time
+import random
+from fake_useragent import UserAgent  # 需要安装：pip install fake-useragent
+
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
 GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/KPL.csv"
@@ -21,19 +25,26 @@ def clean_price(price_text):
     cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
     return cleaned_price
 
-#价格提取
 def extract_prices(url):
+    # 使用 fake_useragent 随机生成一个 User-Agent
+    try:
+        ua = UserAgent()
+        user_agent = ua.random
+    except:
+        # 备用固定 UA（如果 fake_useragent 出现问题）
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
+
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "User-Agent": user_agent,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
         "Accept-Encoding": "gzip, deflate, br",
         "Accept-Language": "en-US,en;q=0.9",
         "Connection": "keep-alive"
     }
-    
+
     try:
-        response = requests.get(url, headers=headers, allow_redirects=True, timeout=30)  # 增加超时时间
-        response.raise_for_status()  # 检查请求是否成功
+        response = requests.get(url, headers=headers, allow_redirects=True, timeout=30)
+        response.raise_for_status()
     except requests.exceptions.RequestException as e:
         return 'ERROR', f'请求失败: {str(e)}'
 
