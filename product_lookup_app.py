@@ -105,4 +105,5 @@ if st.button("Get Prices"):
         selected_product_id = product_id_input.strip()
     elif product_name_input:
         selected_product_id = product_mapping_df.loc[
-            product_mapping_df['Product Name'] == product_name_input, 'Product ID'
+    product_mapping_df['Product Name'] == product_name_input, 'Product ID'
+].values
