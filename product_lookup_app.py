@@ -74,7 +74,7 @@ def load_product_mapping_from_github():
 def save_results_to_txt(product_id, results):
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
+    writer.writerow(["Product ID", "Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
     for result in results:
         writer.writerow(result)
     return output.getvalue()
