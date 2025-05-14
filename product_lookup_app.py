@@ -65,11 +65,12 @@ def extract_prices(url):
 # 将查询结果保存为 CSV 文件
 def save_results_to_csv(product_id, results):
     output = io.BytesIO()  # 使用 BytesIO 替代 StringIO
-    writer = csv.writer(io.TextIOWrapper(output, encoding='utf-8', newline=''))  # 使用 TextIOWrapper 处理文本模式
-    writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
-    
-    for result in results:
-        writer.writerow(result)
+    with io.TextIOWrapper(output, encoding='utf-8', newline='') as wrapped_output:
+        writer = csv.writer(wrapped_output)  # 使用 TextIOWrapper 处理文本模式
+        writer.writerow(["Product ID", "Country", "Product URL", "Regular Price", "Promo Price"])
+        
+        for result in results:
+            writer.writerow(result)
     
     output.seek(0)
     return output
