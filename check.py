@@ -82,10 +82,10 @@ def save_results_to_txt(results):
     return output.getvalue()
 
 # Streamlit 页面设置
-st.set_page_config(page_title="Nordic Customer Product Lookup", layout="centered")
+st.set_page_config(page_title="Elkjop Price Check", layout="centered")
 
-st.title("🌍 Nordic Customer Product Lookup")
-st.write("Click the button below to start fetching product prices for each Nordic country.")
+st.title("🌍 Elkjop Price Check")
+st.write("Click the button below to start fetching TP-Link product prices.")
 
 # 加载产品对照表
 product_mapping_df = load_product_mapping_from_github()
@@ -123,9 +123,15 @@ if product_mapping_df is not None:
         # 保存并提供下载
         txt_data = save_results_to_txt(all_results)
         st.success("✅ Fetching complete!")
-        st.download_button(
-            label="⬇️ Download Results as TXT",
-            data=txt_data,
-            file_name="product_prices.txt",
-            mime="text/csv"
-        )
+       from datetime import datetime
+
+# 获取当前时间并格式化为文件名
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+file_name = f"product_prices_{timestamp}.txt"
+
+st.download_button(
+    label="⬇️ Download Results as TXT",
+    data=txt_data,
+    file_name=file_name,
+    mime="text/csv"
+)
