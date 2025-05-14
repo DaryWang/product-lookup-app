@@ -1,4 +1,5 @@
 import requests
+import re
 from bs4 import BeautifulSoup
 import streamlit as st
 
@@ -9,6 +10,12 @@ URL_TEMPLATES = {
     "瑞典 🇸🇪": "https://www.elgiganten.se/product/{}",
     "丹麦 🇩🇰": "https://www.elgiganten.dk/product/{}",
 }
+
+# 正则表达式：只提取数字和符号（例如，`,`和`.-`）
+def clean_price(price_text):
+    # 使用正则表达式清除价格文本中的字母和非数字符号
+    cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
+    return cleaned_price
 
 # 提取价格的函数（处理重定向）
 def extract_prices(url):
@@ -30,6 +37,9 @@ def extract_prices(url):
     else:
         regular_price = '未找到常规价格'
 
+    # 清理常规价格
+    regular_price = clean_price(regular_price)
+
     # 提取促销价格
     promo_price_element = soup.find('span', {'class': 'font-regular flex flex-shrink px-1 items-center text-base'})
     if promo_price_element:
@@ -37,8 +47,8 @@ def extract_prices(url):
         if promo_price:
             # 获取促销价格并清除 "Førpris: " 部分
             promo_price_text = promo_price.get_text(strip=True)
-            promo_price_value = promo_price_text.replace('Førpris: ', '').strip()
-            promo_price = promo_price_value if promo_price_value else '未找到促销价格'
+            promo_price_value = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
+            promo_price = clean_price(promo_price_value)
         else:
             promo_price = '未找到促销价格'
     else:
