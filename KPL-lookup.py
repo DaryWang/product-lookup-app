@@ -9,6 +9,13 @@ import time
 import random
 from fake_useragent import UserAgent  # 需要安装：pip install fake-useragent
 
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+    "Mozilla/5.0 (Windows NT 10.0; rv:110.0) Gecko/20100101 Firefox/110.0",
+]
 
 # GitHub 上存储产品编号和名称对照表的原始 URL
 GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/KPL.csv"
@@ -20,26 +27,18 @@ URL_TEMPLATES = {
     "Denmark": "https://www.komplett.dk/product/{}",
 }
 
+def get_random_user_agent():
+    return random.choice(USER_AGENTS)
+
 # 正则表达式：只提取数字和符号（例如，`,`和`.-`）
 def clean_price(price_text):
     cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
     return cleaned_price
 
 def extract_prices(url):
-    # 使用 fake_useragent 随机生成一个 User-Agent
-    try:
-        ua = UserAgent()
-        user_agent = ua.random
-    except:
-        # 备用固定 UA（如果 fake_useragent 出现问题）
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
 
     headers = {
-        "User-Agent": user_agent,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Connection": "keep-alive"
+         "User-Agent": get_random_user_agent()
     }
 
     try:
