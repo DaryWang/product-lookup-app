@@ -31,54 +31,45 @@ def get_random_user_agent():
     
     return random.choice(user_agents)
 
-# 正则表达式：只提取数字和符号（例如，`,`和`.-`）
-def clean_price(price_text):
-    cleaned_price = re.sub(r'[^\d,.-]', '', price_text).strip()
-    return cleaned_price
-
-#价格提取
-def extract_prices(url):
+def extract_prices(url, retries=3):
     headers = {
         "User-Agent": get_random_user_agent(),
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://www.google.com/"
     }
 
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        response.raise_for_status()
-    except Exception as e:
-        return 'ERROR', f"Request failed: {e}"
+    for attempt in range(retries):
+        try:
+            response = requests.get(url, headers=headers, timeout=20)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
 
-    soup = BeautifulSoup(response.text, 'html.parser')
+            # 提取常规价格（当前价格）
+            price_element = soup.find('span', {'class': 'product-price-now'})
+            regular_price = price_element.get_text(strip=True) if price_element else 'N/A'
 
-    # 提取常规价格（当前价格）
-    price_element = soup.find('span', {'class': 'product-price-now'})
-    if price_element:
-        inc_vat_price = price_element  # 模拟你原来的结构
-        regular_price = inc_vat_price.get_text(strip=True) if inc_vat_price else 'N/A'
-    else:
-        regular_price = 'N/A'
-    regular_price = clean_price(regular_price)
+            # 提取促销价格（原价）
+            promo_price_element = soup.find('span', {'class': 'product-price-before '})
+            promo_price = promo_price_element.get_text(strip=True) if promo_price_element else 'N/A'
 
-    # 提取促销价格（原价）
-    promo_price_element = soup.find('span', {'class': 'product-price-before '})
-    if promo_price_element:
-        promo_price = promo_price_element  # 模拟你原来的结构
-        if promo_price:
-            promo_price_text = promo_price.get_text(strip=True)
-            promo_price_value = promo_price_text.replace('Førpris: ', '').replace('Tidigare pris', '').strip()
-            promo_price = clean_price(promo_price_value)
-        else:
-            promo_price = 'N/A'
-    else:
-        promo_price = 'N/A'
+            # 如果有促销，交换价格变量
+            if promo_price != 'N/A':
+                regular_price, promo_price = promo_price, regular_price
 
-    # 如果有促销，交换价格变量
-    if promo_price != 'N/A':
-        regular_price, promo_price = promo_price, regular_price
+            return regular_price, promo_price
 
-    return regular_price, promo_price
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(2)  # 延时 2 秒后重试
+            else:
+                return 'ERROR', f"Request failed: {e}"
+
+    return 'ERROR', "Max retries reached."
+
+
+
+
+
 # 从 GitHub 读取产品编号和名称对照表
 def load_product_mapping_from_github():
     response = requests.get(GITHUB_CSV_URL)
