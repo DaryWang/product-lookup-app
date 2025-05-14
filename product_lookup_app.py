@@ -26,8 +26,12 @@ def extract_price_stock(url):
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # 提取价格
-    price_element = soup.find('span', {'class': 'product-price__price'})
-    price = price_element.get_text(strip=True) if price_element else '未找到价格'
+    price_element = soup.find('div', {'class': 'grid grid-cols-subgrid grid-rows-subgrid row-span-2 gap-1 items-end'})
+    if price_element:
+        inc_vat_price = price_element.find('span', {'class': 'inc-vat'})
+        price = inc_vat_price.get_text(strip=True) if inc_vat_price else '未找到价格'
+    else:
+        price = '未找到价格'
 
     # 提取库存信息
     stock_element = soup.find('div', {'class': 'availability-msg'})
