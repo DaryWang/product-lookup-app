@@ -55,7 +55,13 @@ def extract_kjell_info(product_id):
         soup = BeautifulSoup(r.text, "html.parser")
 
         price = soup.find("meta", {"property": "product:price:amount"})
-        price = price["content"] if price else "N/A"
+        if price and price.get("content"):
+            try:
+                 price = f"{float(price['content']):.2f}"
+            except ValueError:
+                 price = "N/A"
+        else:
+            price = "N/A"
 
         discount_tag = soup.find("div", {"data-test-id": "campaign-product-sticker"})
         discount_text = discount_tag.get_text(strip=True) if discount_tag else "N/A"
