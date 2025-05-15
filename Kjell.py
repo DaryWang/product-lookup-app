@@ -13,7 +13,7 @@ GOOGLE_SHEET_URL_TP = "https://docs.google.com/spreadsheets/d/1DBUtjPe7YIgE_hNL5
 
 # 页面设置
 st.set_page_config(page_title="Kjell Price Scraper", layout="centered")
-st.title("📦 Kjell Price Scraper")
+st.title("📦 Kjell Product Info Scraper")
 
 # 下载模板
 sample_df = pd.DataFrame({
@@ -22,38 +22,28 @@ sample_df = pd.DataFrame({
 })
 csv_buffer = io.StringIO()
 sample_df.to_csv(csv_buffer, index=False)
-#st.download_button("📄 Download CSV Template", csv_buffer.getvalue(), "template.csv", "text/csv")
+st.download_button("📄 Download CSV Template", csv_buffer.getvalue(), "template.csv", "text/csv")
 
 # 选择数据源
 st.subheader("Choose Source Data")
-source_option = st.radio("Select product source",
-                         ["CN competitors", "CE competitors", "TP-Link+Mercusys", "Download template and Upload CSV"])
+source_option = st.radio("Select product source", ["CN competitors", "CE competitors", "TP-Link+Mercusys", "Upload CSV"])
+
+@st.cache_data
+def load_sheet(url):
+    return pd.read_csv(url)
 
 input_df = None
-uploaded_file = None
 
-if source_option == "Download template and Upload CSV":
-    col1, col2 = st.columns([1, 5])
-    with col1:
-        st.download_button(
-            label="📥",
-            data=csv_buffer.getvalue(),
-            file_name="template.csv",
-            mime="text/csv",
-            key="download_template"
-        )
-    with col2:
-        uploaded_file = st.file_uploader("Upload CSV file", type=["csv"], key="upload_csv")
-    if uploaded_file is not None:
+if source_option == "Upload CSV":
+    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+    if uploaded_file:
         input_df = pd.read_csv(uploaded_file)
-
 elif source_option == "CN competitors":
     input_df = load_sheet(GOOGLE_SHEET_URL_CN)
 elif source_option == "CE competitors":
     input_df = load_sheet(GOOGLE_SHEET_URL_CE)
 elif source_option == "TP-Link+Mercusys":
     input_df = load_sheet(GOOGLE_SHEET_URL_TP)
-
 
 # 抓取函数
 def extract_kjell_info(product_id):
@@ -108,6 +98,4 @@ if input_df is not None and st.button("🚀 Start Scraping"):
     writer.to_csv(output, index=False, sep="\t")
 
     st.success("Scraping complete!")
-    today_str = datetime.today().strftime("%Y%m%d")
-    filename = f"kjell_results_{today_str}.txt"
-    st.download_button("📥 Download Results", output.getvalue(), file_name=filename, mime="text/plain")
+    st.download_button("📥 Download Results", output.getvalue(), "kjell_results.txt", "text/plain")
