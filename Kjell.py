@@ -98,4 +98,7 @@ if input_df is not None and st.button("🚀 Start Scraping"):
     writer.to_csv(output, index=False, sep="\t")
 
     st.success("Scraping complete!")
-    st.download_button("📥 Download Results", output.getvalue(), "kjell_results.txt", "text/plain")
+    today_str = datetime.today().strftime("%Y%m%d")
+    filename = f"kjell_results_{today_str}.txt"
+
+    st.download_button("📥 Download Results", output.getvalue(), file_name=filename, mime="text/plain")
