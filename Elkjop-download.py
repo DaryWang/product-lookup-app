@@ -1,5 +1,3 @@
-# GITHUB_CSV_URL = "https://raw.githubusercontent.com/DaryWang/product-lookup-app/refs/heads/main/TP-Link.csv"
-
 import requests
 import re
 import csv
