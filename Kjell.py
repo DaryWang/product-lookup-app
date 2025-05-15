@@ -13,7 +13,7 @@ GOOGLE_SHEET_URL_TP = "https://docs.google.com/spreadsheets/d/1DBUtjPe7YIgE_hNL5
 
 # 页面设置
 st.set_page_config(page_title="Kjell Price Scraper", layout="centered")
-st.title("📦 Kjell Product Info Scraper")
+st.title("📦 Kjell Price Scraper")
 
 # 下载模板
 sample_df = pd.DataFrame({
@@ -26,7 +26,7 @@ st.download_button("📄 Download CSV Template", csv_buffer.getvalue(), "templat
 
 # 选择数据源
 st.subheader("Choose Source Data")
-source_option = st.radio("Select product source", ["CN competitors", "CE competitors", "TP-Link+Mercusys", "Upload CSV"])
+source_option = st.radio("Select product source", ["CN competitors", "CE competitors", "TP-Link+Mercusys", "Download template and Upload CSV"])
 
 @st.cache_data
 def load_sheet(url):
@@ -98,4 +98,6 @@ if input_df is not None and st.button("🚀 Start Scraping"):
     writer.to_csv(output, index=False, sep="\t")
 
     st.success("Scraping complete!")
-    st.download_button("📥 Download Results", output.getvalue(), "kjell_results.txt", "text/plain")
+    today_str = datetime.today().strftime("%Y%m%d")
+    filename = f"kjell_results_{today_str}.txt"
+    st.download_button("📥 Download Results", output.getvalue(), file_name=filename, mime="text/plain")
