@@ -22,28 +22,38 @@ sample_df = pd.DataFrame({
 })
 csv_buffer = io.StringIO()
 sample_df.to_csv(csv_buffer, index=False)
-st.download_button("📄 Download CSV Template", csv_buffer.getvalue(), "template.csv", "text/csv")
+#st.download_button("📄 Download CSV Template", csv_buffer.getvalue(), "template.csv", "text/csv")
 
 # 选择数据源
 st.subheader("Choose Source Data")
-source_option = st.radio("Select product source", ["CN competitors", "CE competitors", "TP-Link+Mercusys", "Download template and Upload CSV"])
-
-@st.cache_data
-def load_sheet(url):
-    return pd.read_csv(url)
+source_option = st.radio("Select product source",
+                         ["CN competitors", "CE competitors", "TP-Link+Mercusys", "Download template and Upload CSV"])
 
 input_df = None
+uploaded_file = None
 
-if source_option == "Upload CSV":
-    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
-    if uploaded_file:
+if source_option == "Download template and Upload CSV":
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.download_button(
+            label="📥",
+            data=csv_buffer.getvalue(),
+            file_name="template.csv",
+            mime="text/csv",
+            key="download_template"
+        )
+    with col2:
+        uploaded_file = st.file_uploader("Upload CSV file", type=["csv"], key="upload_csv")
+    if uploaded_file is not None:
         input_df = pd.read_csv(uploaded_file)
+
 elif source_option == "CN competitors":
     input_df = load_sheet(GOOGLE_SHEET_URL_CN)
 elif source_option == "CE competitors":
     input_df = load_sheet(GOOGLE_SHEET_URL_CE)
 elif source_option == "TP-Link+Mercusys":
     input_df = load_sheet(GOOGLE_SHEET_URL_TP)
+
 
 # 抓取函数
 def extract_kjell_info(product_id):
