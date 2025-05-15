@@ -2,111 +2,94 @@ import streamlit as st
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 import io
+from datetime import datetime
+import time
 
-# --- 抓取函数 ---
-def extract_product_info(product_id, product_name=""):
-    url = f"https://www.kjell.com/se/{product_id}"
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-US,en;q=0.9"
-    }
-    try:
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-    except Exception as e:
-        return {
-            "product_name": product_name,
-            "product_id": product_id,
-            "product_title": "ERROR",
-            "current_price": "ERROR",
-            "discount": "ERROR",
-            "retailer_id": "ERROR",
-            "date": datetime.now().strftime("%Y-%m-%d")
-        }
+# 三个 Google Sheet 数据源（请替换成您的链接）
+GOOGLE_SHEET_URL_CN = "https://docs.google.com/spreadsheets/d/1k5GJEo0IVzxOHc-NhccbyWBD4fDsXluLoSA9_7v1fLY/export?format=csv"
+GOOGLE_SHEET_URL_CE = "https://docs.google.com/spreadsheets/d/1k5GJEo0IVzxOHc-NhccbyWBD4fDsXluLoSA9_7v1fLY/export?format=csv"
+GOOGLE_SHEET_URL_TP = "https://docs.google.com/spreadsheets/d/1DBUtjPe7YIgE_hNL5Dh6rc83EJ43tlHumyik_IVmejA/export?format=csv"
 
-    soup = BeautifulSoup(response.text, "html.parser")
+# 页面设置
+st.set_page_config(page_title="Kjell Price Scraper", layout="centered")
+st.title("📦 Kjell Product Info Scraper")
 
-    # 提取字段
-    price_meta = soup.find("meta", {"property": "product:price:amount"})
-    current_price = price_meta["content"] if price_meta and price_meta.has_attr("content") else ""
-
-    discount_div = soup.find("div", {"data-test-id": "campaign-product-sticker"})
-    discount_text = discount_div.get_text(strip=True) if discount_div else ""
-
-    title_meta = soup.find("meta", {"property": "og:title"})
-    product_title = title_meta["content"] if title_meta and title_meta.has_attr("content") else ""
-
-    retailer_id_meta = soup.find("meta", {"property": "product:retailer_item_id"})
-    retailer_id = retailer_id_meta["content"] if retailer_id_meta and retailer_id_meta.has_attr("content") else ""
-
-    return {
-        "product_name": product_name,
-        "product_id": product_id,
-        "product_title": product_title,
-        "current_price": current_price,
-        "discount": discount_text,
-        "retailer_id": retailer_id,
-        "date": datetime.now().strftime("%Y-%m-%d")
-    }
-
-# --- 页面 UI ---
-st.set_page_config(page_title="Kjell Product Info Scraper", layout="centered")
-st.title("🔍 Kjell Product Info Scraper")
-
-st.markdown("""
-请上传包含产品ID和产品名称的CSV文件。  
-CSV文件应包含列：**product id** 和（可选）**product name**。
-""")
-
-# --- 下载模板按钮 ---
-sample_csv = pd.DataFrame({
-    "product id": ["61632", "65412"],
-    "product name": ["WD My Cloud Home 4TB", "TP-Link Tapo C520WS"]
+# 下载模板
+sample_df = pd.DataFrame({
+    "Product ID": ["p61632"],
+    "Product Name": ["WD My Cloud Home 4TB"]
 })
-csv_template = sample_csv.to_csv(index=False)
-st.download_button(
-    label="📥 下载CSV模板文件",
-    data=csv_template,
-    file_name="kjell_template.csv",
-    mime="text/csv"
-)
+csv_buffer = io.StringIO()
+sample_df.to_csv(csv_buffer, index=False)
+st.download_button("📄 Download CSV Template", csv_buffer.getvalue(), "template.csv", "text/csv")
 
-# --- 上传CSV文件 ---
-uploaded_file = st.file_uploader("上传CSV文件", type=["csv"])
+# 选择数据源
+st.subheader("Choose Source Data")
+source_option = st.radio("Select product source", ["CN competitors", "CE competitors", "TP-Link+Mercusys", "Upload CSV"])
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-    if "product id" not in df.columns:
-        st.error("CSV 文件必须包含名为 'product id' 的列。")
-    else:
-        st.success(f"✅ 成功加载 {len(df)} 条产品数据")
-        st.dataframe(df.head())
+@st.cache_data
+def load_sheet(url):
+    return pd.read_csv(url)
 
-        if st.button("🚀 开始抓取"):
-            results = []
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+input_df = None
 
-            for idx, row in df.iterrows():
-                product_id = str(row["product id"]).strip()
-                product_name = str(row["product name"]).strip() if "product name" in row else ""
-                status_text.text(f"正在抓取产品ID: {product_id} ({idx+1}/{len(df)})")
-                info = extract_product_info(product_id, product_name)
-                results.append(info)
-                progress_bar.progress((idx + 1) / len(df))
+if source_option == "Upload CSV":
+    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+    if uploaded_file:
+        input_df = pd.read_csv(uploaded_file)
+elif source_option == "CN competitors":
+    input_df = load_sheet(GOOGLE_SHEET_URL_CN)
+elif source_option == "CE competitors":
+    input_df = load_sheet(GOOGLE_SHEET_URL_CE)
+elif source_option == "TP-Link+Mercusys":
+    input_df = load_sheet(GOOGLE_SHEET_URL_TP)
 
-            status_text.text("✅ 抓取完成！")
-            results_df = pd.DataFrame(results)[[
-                "product_name", "product_id", "product_title", "current_price", "discount", "retailer_id", "date"
-            ]]
+# 抓取函数
+def extract_kjell_info(product_id):
+    try:
+        url = f"https://www.kjell.com/se/{product_id}"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get(url, headers=headers, timeout=15)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
 
-            csv_buffer = io.StringIO()
-            results_df.to_csv(csv_buffer, index=False)
-            st.download_button(
-                label="📥 下载抓取结果 (CSV格式)",
-                data=csv_buffer.getvalue(),
-                file_name=f"kjell_scraped_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
+        price = soup.find("meta", {"property": "product:price:amount"})
+        price = price["content"] if price else "N/A"
+
+        discount_tag = soup.find("div", {"data-test-id": "campaign-product-sticker"})
+        discount_text = discount_tag.get_text(strip=True) if discount_tag else "N/A"
+
+        title_tag = soup.find("meta", {"property": "og:title"})
+        title = title_tag["content"] if title_tag else "N/A"
+
+        retailer_id_tag = soup.find("meta", {"property": "product:retailer_item_id"})
+        retailer_id = retailer_id_tag["content"] if retailer_id_tag else "N/A"
+
+        return price, discount_text, title, retailer_id
+    except Exception as e:
+        return "ERROR", "ERROR", "ERROR", "ERROR"
+
+# 执行抓取
+if input_df is not None and st.button("🚀 Start Scraping"):
+    st.write("Scraping started. Please wait...")
+    progress_bar = st.progress(0)
+    results = []
+    total = len(input_df)
+    for idx, row in input_df.iterrows():
+        product_id = str(row["Product ID"])
+        product_name = row["Product Name"]
+        price, discount, title, retailer_id = extract_kjell_info(product_id)
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        results.append([product_name, product_id, price, discount, title, retailer_id, date_str])
+        progress_bar.progress((idx + 1) / total)
+        time.sleep(1.5)  # 节流防止封锁
+
+    output = io.StringIO()
+    writer = pd.DataFrame(results, columns=[
+        "Product Name", "Product ID", "Current Price", "Discount Info", "Title", "Retailer Item ID", "Date"
+    ])
+    writer.to_csv(output, index=False, sep="\t")
+
+    st.success("Scraping complete!")
+    st.download_button("📥 Download Results", output.getvalue(), "kjell_results.txt", "text/plain")
