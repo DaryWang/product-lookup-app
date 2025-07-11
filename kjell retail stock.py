@@ -1,52 +1,75 @@
+import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-import streamlit as st
 import pandas as pd
 from datetime import datetime
+from io import BytesIO
 
-# 要抓取的产品页面
-url = "https://www.kjell.com/se/produkter/sakerhet-overvakning/kameraovervakning/overvakningskameror/natverkskameror/tp-link-tapo-c200-overvakningskamera-med-wifi-p62284"
+URL = "https://www.kjell.com/se/varumarken/tp-link?count=240&sortBy=popularity"
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-def extract_stock_info(url):
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
+def parse_page(url):
+    res = requests.get(url, headers=HEADERS)
+    soup = BeautifulSoup(res.text, 'html.parser')
 
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.text, "html.parser")
+    product_cards = soup.find_all("a", class_="product-card__link")
+    records = []
 
-    # 查找库存信息区域
-    container = soup.find("div", class_="product__availability")  # 根据 kjell 页面结构选定
-    if not container:
-        return {"Online": "N/A", "Butik": "N/A"}
+    for card in product_cards:
+        name = card.find("div", class_="product-card__title")
+        if not name:
+            continue
+        name = name.text.strip()
+        product_url = "https://www.kjell.com" + card['href']
 
-    # 获取库存信息文字
-    text = container.get_text(separator="\n", strip=True)
-    lines = text.split("\n")
+        availability = card.find("div", class_="product-card__availability")
+        if availability:
+            availability_text = availability.get_text(separator="\n", strip=True)
+            online = next((line for line in availability_text.split("\n") if "Online" in line), "Online: N/A")
+            butik = next((line for line in availability_text.split("\n") if "butiker" in line), "Finns i 0 butiker")
 
-    # 提取信息
-    online = next((l for l in lines if "st" in l or "dagars" in l), "N/A")
-    butik = next((l for l in lines if "butiker" in l), "N/A")
+            # 提取数字
+            online_qty = online.replace("Online", "").strip()
+            butik_qty = ''.join(filter(str.isdigit, butik))
+        else:
+            online_qty = "N/A"
+            butik_qty = "0"
 
-    return {
-        "Online": online,
-        "Butik": butik
-    }
+        records.append({
+            "Datum": datetime.now().strftime("%Y-%m-%d"),
+            "Produktnamn": name,
+            "Produktlänk": product_url,
+            "Online": online_qty,
+            "Butik": butik_qty
+        })
 
-# Streamlit 页面配置
+    return pd.DataFrame(records)
+
+def to_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(writer, index=False, sheet_name="TP-Link Lagerstatus")
+    output.seek(0)
+    return output
+
+# ---------------- Streamlit UI ----------------
+
 st.set_page_config(page_title="Kjell Lagerstatus", layout="wide")
+st.title("📦 TP-Link Produkter – Lagerstatus från Kjell.com")
 
-st.title("Kjell Lagerstatus – TP-Link Tapo C200")
+if st.button("🚀 開始抓取"):
+    with st.spinner("抓取中，請稍候..."):
+        df = parse_page(URL)
+        st.success(f"抓取成功，共獲取 {len(df)} 款產品。")
+        st.dataframe(df, use_container_width=True)
 
-# 获取数据
-data = extract_stock_info(url)
-data["Datum"] = datetime.now().strftime("%Y-%m-%d")
+        # 导出 Excel 文件
+        excel_data = to_excel(df)
 
-# 转换为 DataFrame
-df = pd.DataFrame([data])
-
-# 显示表格
-st.dataframe(df, use_container_width=True)
-
-# 显示原始链接
-st.markdown(f"[Produktlänk]({url})")
+        # 下载按钮
+        st.download_button(
+            label="📥 點擊下載 Excel 檔",
+            data=excel_data,
+            file_name=f"tp_link_lagerstatus_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
